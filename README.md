@@ -2,17 +2,6 @@
 
 Dự án này thực hiện một pipeline ETL (Extract-Transform-Load) hoàn chỉnh để phân tích streaming data về giá Bitcoin (BTCUSDT) từ API Binance sử dụng Apache Kafka và Apache Spark.
 
-## 📋 Mục lục
-
-- [Tổng quan](#tổng-quan)
-- [Yêu cầu hệ thống](#yêu-cầu-hệ-thống)
-- [Cài đặt](#cài-đặt)
-- [Cấu trúc dự án](#cấu-trúc-dự-án)
-- [Hướng dẫn chạy](#hướng-dẫn-chạy)
-- [Giải thích các thành phần](#giải-thích-các-thành-phần)
-- [Monitoring](#monitoring)
-- [Troubleshooting](#troubleshooting)
-
 ## 🎯 Tổng quan
 
 Dự án bao gồm 3 giai đoạn chính:
