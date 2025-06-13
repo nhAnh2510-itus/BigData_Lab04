@@ -31,7 +31,7 @@ def main():
         .config("spark.driver.maxResultSize", "512m") \
         .getOrCreate()
     
-    spark.sparkContext.setLogLevel("WARN")
+    spark.sparkContext.setLogLevel("OFF")
     
     print(f"✅ Spark Session created successfully!")
     print(f"🔗 Spark Master: {spark_master}")

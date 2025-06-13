@@ -15,8 +15,8 @@
 ```
 
 ### 3. Theo dõi kết quả
-- **Kafka UI**: http://localhost:8080
-- **Spark UI**: http://localhost:8081
+- **Kafka UI**: http://localhost:8083
+- **Spark UI**: http://localhost:8080
 
 ### 4. Kiểm tra dữ liệu
 ```bash
