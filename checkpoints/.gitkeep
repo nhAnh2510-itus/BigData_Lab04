@@ -1,0 +1,2 @@
+# This file ensures the checkpoints directory is tracked by Git
+# but the actual checkpoint files are ignored

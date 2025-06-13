@@ -10,24 +10,33 @@ from concurrent.futures import ThreadPoolExecutor
 from queue import Queue
 import logging
 
-# Lấy Kafka bootstrap servers từ environment variable hoặc dùng localhost
-KAFKA_SERVERS = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092')
-
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Kafka producer với optimized configs
-producer = KafkaProducer(
-    bootstrap_servers=KAFKA_SERVERS,
-    value_serializer=lambda v: json.dumps(v).encode('utf-8'),
-    batch_size=16384,  # Integer, not string
-    linger_ms=5,       # Integer, not string
-    compression_type='gzip',  # Use gzip instead of snappy (more widely available)
-    buffer_memory=33554432,  # Integer, not string
-    retries=3,         # Integer, not string
-    acks=1             # Integer 1, not string '1'
-)
+# Global producer variable
+producer = None
+
+def get_kafka_producer():
+    """Tạo và trả về Kafka producer với config được lấy từ environment variables"""
+    global producer
+    if producer is None:
+        # Lấy Kafka bootstrap servers từ environment variable hoặc dùng localhost
+        kafka_servers = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092')
+        logger.info(f"Connecting to Kafka at: {kafka_servers}")
+        
+        # Kafka producer với optimized configs
+        producer = KafkaProducer(
+            bootstrap_servers=kafka_servers,
+            value_serializer=lambda v: json.dumps(v).encode('utf-8'),
+            batch_size=16384,  # Integer, not string
+            linger_ms=5,       # Integer, not string
+            compression_type='gzip',  # Use gzip instead of snappy (more widely available)
+            buffer_memory=33554432,  # Integer, not string
+            retries=3,         # Integer, not string
+            acks=1             # Integer 1, not string '1'
+        )
+    return producer
 
 # Shared variables
 latest_price = None
@@ -103,7 +112,7 @@ def message_sender():
                 # Tạo message với timestamp hiện tại
                 message = create_message_with_timestamp(current_price)
                 if message:
-                    producer.send('btc-price', value=message)
+                    get_kafka_producer().send('btc-price', value=message)
                     message_count += 1
                     
                     if message_count % 50 == 0:  # Log mỗi 5 giây
@@ -119,7 +128,7 @@ def message_sender():
                     "price": 0.0,
                     "event_time": datetime.now(timezone.utc).isoformat(timespec='milliseconds').replace('+00:00', 'Z')
                 }
-                producer.send('btc-price', value=dummy_message)
+                get_kafka_producer().send('btc-price', value=dummy_message)
                 
         except Exception as e:
             logger.error(f"Message sender error: {e}")
@@ -143,5 +152,5 @@ if __name__ == "__main__":
         message_sender()
     except KeyboardInterrupt:
         logger.info("\n🛑 Stopping price extractor...")
-        producer.flush()  # Ensure all messages are sent
-        producer.close()
+        get_kafka_producer().flush()  # Ensure all messages are sent
+        get_kafka_producer().close()

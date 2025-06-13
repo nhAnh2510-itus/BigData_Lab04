@@ -96,6 +96,10 @@ spark-warehouse/
 metastore_db/
 derby.log
 
+# Spark Streaming Checkpoints (keep directory structure but ignore content)
+checkpoints/*/
+!checkpoints/.gitkeep
+
 # Big Data files
 *.avro
 *.orc
@@ -116,3 +120,5 @@ Thumbs.db
 *~
 
 Lab4.md
+
+spark-3.5.6-bin-hadoop3.tgz
