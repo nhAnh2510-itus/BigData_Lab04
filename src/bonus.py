@@ -1,5 +1,3 @@
-# btc_windows_analysis_fixed.py
-
 import os
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import (
@@ -9,7 +7,7 @@ from pyspark.sql.functions import (
     to_json,
     struct,
     when,
-    lit,  # <--- THAY ĐỔI: Import hàm lit
+    lit,
     min as spark_min,
 )
 from pyspark.sql.types import (
@@ -21,10 +19,6 @@ from pyspark.sql.types import (
 )
 
 def create_spark_session():
-    """
-    Creates and configures a Spark session optimized for structured streaming
-    with Kafka and stateful operations.
-    """
     spark_master = os.getenv('SPARK_MASTER', 'local[*]')
     
     return (
@@ -34,15 +28,10 @@ def create_spark_session():
         .config("spark.jars.packages", "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0")
         .config("spark.sql.shuffle.partitions", "4")
         .config("spark.sql.streaming.stateStore.maintenanceInterval", "60s")
-        # .config("spark.sql.adaptive.enabled", "true") # This setting is not for streaming
         .getOrCreate()
     )
 
 def find_shortest_windows_and_publish(spark, kafka_servers):
-    """
-    Reads the btc-price stream, finds the shortest negative outcome windows
-    using a stream-stream self-join, and publishes results to Kafka.
-    """
     price_schema = (
         StructType()
         .add("symbol", StringType())
@@ -61,20 +50,16 @@ def find_shortest_windows_and_publish(spark, kafka_servers):
         .select("data.*")
         .filter(col("price").isNotNull() & col("event_time").isNotNull())
         .withWatermark("event_time", "10 seconds")
-        # <--- THAY ĐỔI: Thêm cột khóa giả để thỏa mãn điều kiện join
         .withColumn("join_key", lit("btc"))
     )
 
     left_stream = price_stream.alias("left")
     right_stream = price_stream.alias("right")
 
-    # <--- THAY ĐỔI: Cập nhật điều kiện join để bao gồm equality predicate
     joined_stream = left_stream.join(
         right_stream,
         expr("""
-            -- 1. Equality predicate (BẮT BUỘC)
             left.join_key = right.join_key AND 
-            -- 2. Time-range condition
             right.event_time > left.event_time AND
             right.event_time <= left.event_time + interval 20 seconds
         """),
@@ -133,14 +118,11 @@ def find_shortest_windows_and_publish(spark, kafka_servers):
         .format("kafka")
         .option("kafka.bootstrap.servers", kafka_servers)
         .option("topic", "btc-price-lower")
-        .option("checkpointLocation", "/tmp/checkpoints/btc_windows_lower")
+        .option("checkpointLocation", "./checkpoint/bonus_windows")
         .outputMode("append")
         .start()
     )
-    
-    print("🚀 Started publishing to 'btc-price-higher' and 'btc-price-lower' topics.")
-    print("✅ Both streaming queries are running in parallel.")
-    
+
     spark.streams.awaitAnyTermination()
 
 
@@ -151,17 +133,14 @@ def main():
     spark = None
     try:
         spark = create_spark_session()
-        print("✅ Spark session created successfully.")
         find_shortest_windows_and_publish(spark, KAFKA_BOOTSTRAP_SERVERS)
     except Exception as e:
-        print(f"❌ An error occurred: {e}")
         import traceback
         traceback.print_exc()
     finally:
         if spark:
-            print("🏁 Stopping Spark session...")
             spark.stop()
-            print("✅ Spark session stopped.")
+
 
 
 if __name__ == "__main__":
