@@ -127,7 +127,6 @@ def find_shortest_windows_and_publish(spark, kafka_servers):
 
 
 def main():
-    """Main function to orchestrate the Spark application"""
     KAFKA_BOOTSTRAP_SERVERS = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092')
     
     spark = None
