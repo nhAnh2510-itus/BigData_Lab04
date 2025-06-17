@@ -91,12 +91,16 @@ case $choice in
         echo "3️⃣  Khởi động Transform Z-Score (Background)..."
         docker compose run --rm -d --name transform-zscore-service -e KAFKA_BOOTSTRAP_SERVERS=kafka:29092 python-app python src/transform_zscore.py
         
+        # Chạy Bonus Analysis
+        echo "4️⃣  Khởi động Bonus Windows Analysis (Background)..."
+        docker compose run --rm -d --name bonus-service -e KAFKA_BOOTSTRAP_SERVERS=kafka:29092 python-app python src/bonus.py
+        
         # Đợi transform data có sẵn
         echo "⏳ Đợi transform data (5s)..."
         sleep 5
         
         # Chạy Load
-        echo "4️⃣  Khởi động Load (Background)..."
+        echo "5️⃣  Khởi động Load (Background)..."
         docker compose run --rm -d --name load-service -e KAFKA_BOOTSTRAP_SERVERS=kafka:29092 python-app python src/load.py
         
         echo ""
@@ -115,6 +119,7 @@ case $choice in
         echo "   - extract-service"
         echo "   - transform-moving-service" 
         echo "   - transform-zscore-service"
+        echo "   - bonus-service"
         echo "   - load-service"
         ;;
     8)
@@ -123,12 +128,16 @@ case $choice in
         echo "1) btc-price (raw data)"
         echo "2) btc-price-moving (moving stats)"
         echo "3) btc-price-zscore (z-score analysis)"
-        read -p "Chọn topic (1-3): " topic_choice
+        echo "4) btc-price-higher (bonus: higher price windows)"
+        echo "5) btc-price-lower (bonus: lower price windows)"
+        read -p "Chọn topic (1-5): " topic_choice
         
         case $topic_choice in
             1) TOPIC="btc-price" ;;
             2) TOPIC="btc-price-moving" ;;
             3) TOPIC="btc-price-zscore" ;;
+            4) TOPIC="btc-price-higher" ;;
+            5) TOPIC="btc-price-lower" ;;
             *) echo "❌ Lựa chọn không hợp lệ"; exit 1 ;;
         esac
         

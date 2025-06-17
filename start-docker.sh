@@ -49,6 +49,8 @@ echo "📋 Tạo Kafka topics..."
 docker compose exec kafka kafka-topics --create --topic btc-price --bootstrap-server kafka:29092 --partitions 1 --replication-factor 1 2>/dev/null || echo "Topic btc-price đã tồn tại"
 docker compose exec kafka kafka-topics --create --topic btc-price-moving --bootstrap-server kafka:29092 --partitions 1 --replication-factor 1 2>/dev/null || echo "Topic btc-price-moving đã tồn tại"
 docker compose exec kafka kafka-topics --create --topic btc-price-zscore --bootstrap-server kafka:29092 --partitions 1 --replication-factor 1 2>/dev/null || echo "Topic btc-price-zscore đã tồn tại"
+docker compose exec kafka kafka-topics --create --topic btc-price-higher --bootstrap-server kafka:29092 --partitions 1 --replication-factor 1 2>/dev/null || echo "Topic btc-price-higher đã tồn tại"
+docker compose exec kafka kafka-topics --create --topic btc-price-lower --bootstrap-server kafka:29092 --partitions 1 --replication-factor 1 2>/dev/null || echo "Topic btc-price-lower đã tồn tại"
 
 echo ""
 echo "🔍 Kiểm tra topics:"

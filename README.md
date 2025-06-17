@@ -19,11 +19,19 @@ Pipeline bao gồm 3 giai đoạn chính:
 │   Binance API   │───▶│     Extract     │───▶│   Kafka Topic   │───▶│   Transform     │
 │   (BTC Price)   │    │   (Python)      │    │  'btc-price'    │    │   (PySpark)     │
 └─────────────────┘    └─────────────────┘    └─────────────────┘    └─────────────────┘
-                                                                                │
+                                                       │                       │
+                                                       ▼                       │
+                                              ┌─────────────────┐               │
+                                              │   Bonus.py      │               │
+                                              │ (Window Analysis)│               │
+                                              └─────────────────┘               │
+                                                       │                       │
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐               │
 │    MongoDB      │◀───│      Load       │◀───│   Kafka Topics  │◀──────────────┘
-│   (Results)     │    │   (Python)      │    │  'btc-price-*'  │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
+│   (Results)     │    │   (Python)      │    │'btc-price-*'    │
+└─────────────────┘    └─────────────────┘    │'btc-price-higher'│
+                                              │'btc-price-lower' │
+                                              └─────────────────┘
 ```
 
 ## 🛠 Yêu cầu hệ thống
@@ -132,13 +140,23 @@ Script này sẽ:
 - Tự động phân chia theo time windows
 - Collections: `btc-price-*-30s`, `btc-price-*-1m`, etc.
 
+#### 5. Bonus Analysis (Shortest Windows)
+```bash
+./run-python-app.sh
+# Chọn option 5: Bonus
+```
+- Phân tích shortest windows của negative outcomes
+- Tìm thời gian đến giá cao hơn/thấp hơn trong window 20s
+- Gửi kết quả vào topics `btc-price-higher` và `btc-price-lower`
+- Late data tolerance: 10 giây
+
 ## 📊 Monitoring và Debug
 
 ### Web UI Interfaces
 
 | Service | URL | Mô tả |
 |---------|-----|-------|
-| Kafka UI | http://localhost:8080 | Quản lý Kafka topics, messages |
+| Kafka UI | http://localhost:8083 | Quản lý Kafka topics, messages |
 | Spark Master | http://localhost:8081 | Spark cluster status |
 | Spark Worker | http://localhost:8082 | Worker node status |
 
@@ -213,9 +231,11 @@ BigData_Lab04/
 
 | Topic | Mô tả | Producer | Consumer |
 |-------|-------|----------|----------|
-| `btc-price` | Raw Bitcoin price data | extract.py | transform_*.py |
+| `btc-price` | Raw Bitcoin price data | extract.py | transform_*.py, bonus.py |
 | `btc-price-moving` | Moving statistics results | transform_moving_stats.py | load.py |
 | `btc-price-zscore` | Z-score analysis results | transform_zscore.py | load.py |
+| `btc-price-higher` | Higher price windows (bonus) | bonus.py | load.py |
+| `btc-price-lower` | Lower price windows (bonus) | bonus.py | load.py |
 
 ### MongoDB Collections
 
@@ -224,6 +244,8 @@ BigData_Lab04/
 | `btc-price-moving-30s` | Moving stats 30 seconds | 30s |
 | `btc-price-moving-1m` | Moving stats 1 minute | 1m |
 | `btc-price-zscore-1m` | Z-score 1 minute | 1m |
+| `btc-price-higher-windows` | Higher price windows (bonus) | Real-time |
+| `btc-price-lower-windows` | Lower price windows (bonus) | Real-time |
 | ... | ... | ... |
 
 ## 🐛 Troubleshooting
