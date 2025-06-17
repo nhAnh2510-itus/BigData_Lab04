@@ -145,7 +145,7 @@ services:
     networks:
       - default
     profiles:
-      - app  # Chỉ khởi động khi cần
+      - app 
 
 networks:
   default:
