@@ -3,29 +3,21 @@ from pyspark.sql.functions import (
     window, avg, stddev, col, struct, array, lit, to_json, from_json
 )
 from pyspark.sql.types import StructType, StringType, DoubleType, TimestampType
-import os
 
 def main():
-    """
-    Hàm chính để chạy pipeline tính toán thống kê trượt.
-    """
-    # === Cấu hình Kafka ===
-    KAFKA_BOOTSTRAP_SERVERS = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092')
+
     INPUT_TOPIC = "btc-price"
     OUTPUT_TOPIC = "btc-price-moving"
 
-    # 1) Tạo SparkSession với cấu hình tối ưu cho Docker
-    spark_master = os.getenv('SPARK_MASTER', 'local[*]')
+    # Tạo SparkSession với cấu hình tối ưu cho Docker
+
     
     spark = SparkSession.builder \
         .appName("MovingStats_Tumbling_WithJoins") \
-        .master(spark_master) \
-        .config("spark.jars.packages", "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0") \
         .config("spark.sql.shuffle.partitions", "4") \
         .config("spark.sql.adaptive.enabled", "true") \
         .config("spark.sql.adaptive.coalescePartitions.enabled", "true") \
         .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer") \
-        .config("spark.sql.streaming.checkpointLocation", "/app/checkpoints") \
         .config("spark.driver.memory", "1g") \
         .config("spark.executor.memory", "1g") \
         .config("spark.driver.maxResultSize", "512m") \
@@ -33,12 +25,12 @@ def main():
     
     spark.sparkContext.setLogLevel("OFF")
     
-    print(f"✅ Spark Session created successfully!")
-    print(f"🔗 Spark Master: {spark_master}")
-    print(f"📡 Kafka Servers: {KAFKA_BOOTSTRAP_SERVERS}")
-    print(f"💾 Checkpoint Location: /app/checkpoints")
 
-    # 2) Định nghĩa schema và đọc stream, gắn watermark sớm
+  
+
+
+
+    # Định nghĩa schema và đọc stream, gắn watermark sớm
     schema = StructType() \
         .add("symbol", StringType()) \
         .add("price", DoubleType()) \
@@ -47,7 +39,7 @@ def main():
     df_raw = (
         spark.readStream
              .format("kafka")
-             .option("kafka.bootstrap.servers", KAFKA_BOOTSTRAP_SERVERS)
+             .option("kafka.bootstrap.servers", "localhost:9092")
              .option("subscribe", INPUT_TOPIC)
              .option("startingOffsets", "latest")
              .option("maxOffsetsPerTrigger", 1000)
@@ -58,7 +50,8 @@ def main():
              .select("data.symbol", "data.price", "data.event_time")
     )
 
-    # 3) Tạo các DataFrame stats với tumbling window - đầy đủ theo yêu cầu
+    # Tạo các DataFrame stats với tumbling window - đầy đủ theo yêu cầu
+
     stats30s = (
         df_raw
           .withWatermark("event_time", "10 seconds")
@@ -137,7 +130,7 @@ def main():
           )
     )
 
-    # 5) Join tất cả các window
+    # Join tất cả các window
     joined = (
         stats30s
           .join(stats1m, on=["symbol", "timestamp"], how="inner")
@@ -171,17 +164,16 @@ def main():
           )
     )
 
-    # 6) Chuyển thành JSON và xuất ra Kafka
+    
     output = joined.select(
         to_json(struct(col("timestamp"), col("symbol"), col("windows"))).alias("value")
     )
 
-    # Ghi ra Kafka
     query = output.writeStream \
           .format("kafka") \
-          .option("kafka.bootstrap.servers", KAFKA_BOOTSTRAP_SERVERS) \
+          .option("kafka.bootstrap.servers", "localhost:9092") \
           .option("topic", OUTPUT_TOPIC) \
-          .option("checkpointLocation", "./checkpoints/moving_stats_full") \
+          .option("checkpointLocation", "C:\\users\\admin\\checkpoint\\console") \
           .outputMode("append") \
           .start()
 
@@ -189,3 +181,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+## spark-submit --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.5 --master local[*] C:\sparkCourse\moving.py
