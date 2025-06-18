@@ -1,0 +1,1 @@
+mongo connect string: mongodb+srv://nguyenlenguyen1712004:nguyen1712004@cluster0.mp6lpiv.mongodb.net
