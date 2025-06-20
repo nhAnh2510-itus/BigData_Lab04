@@ -7,7 +7,7 @@ from pyspark.sql.types import (
 # 1. Tạo SparkSession
 spark = SparkSession.builder \
     .appName("KafkaZScoreToMongo") \
-    .config("spark.mongodb.write.connection.uri", "mongodb+srv://nguyenlenguyen1712004:nguyen1712004@cluster0.mp6lpiv.mongodb.net/crypto?retryWrites=true&w=majority") \
+    .config("spark.mongodb.write.connection.uri", "mongodb+srv://") \
     .getOrCreate()
 
 # 2. Schema tương ứng với dữ liệu zscore
@@ -39,7 +39,7 @@ df = (
 df.writeStream \
     .format("mongodb") \
     .option("checkpointLocation", "/home/nguyen1712004/checkpoint/mongo-zscore") \
-    .option("spark.mongodb.write.connection.uri", "mongodb+srv://nguyenlenguyen1712004:nguyen1712004@cluster0.mp6lpiv.mongodb.net/crypto?retryWrites=true&w=majority") \
+    .option("spark.mongodb.write.connection.uri", "mongodb+srv://") \
     .option("spark.mongodb.write.database", "crypto") \
     .option("spark.mongodb.write.collection", "btc-price-zscore") \
     .outputMode("append") \
